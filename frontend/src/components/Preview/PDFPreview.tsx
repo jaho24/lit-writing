@@ -1,4 +1,5 @@
 import { useAppStore } from '../../stores/appStore';
+import { getPdfUrl } from '../../api/client';
 import { useState, useEffect, useRef } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { Highlighter, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCw, FileText } from 'lucide-react';
@@ -34,9 +35,7 @@ export function PDFPreview() {
     if (!selectedLit?.file_path) return;
     
     try {
-      const pdfUrl = selectedLit.file_path.startsWith('pdfs/')
-        ? `/${selectedLit.file_path}`
-        : `/pdfs/${selectedLit.file_path}`;
+      const pdfUrl = getPdfUrl(selectedLit.file_path);
       const loadingTask = pdfjsLib.getDocument(pdfUrl);
       const pdf = await loadingTask.promise;
       setPdfDocument(pdf);

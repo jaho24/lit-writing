@@ -1,10 +1,20 @@
 import axios from 'axios';
 import type { Literature, Library, Annotation, Tag, WritingStyle, StyleMode, OutputLanguage, GenerationResult } from '../types';
 
+// VITE_BACKEND_URL is set in production (e.g. https://litwrite-api.onrender.com)
+// In dev it's empty → Vite proxy handles /api and /pdfs
+const BACKEND = import.meta.env.VITE_BACKEND_URL || '';
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: BACKEND ? `${BACKEND}/api` : '/api',
   timeout: 30000,
 });
+
+export function getPdfUrl(filePath: string): string {
+  const base = BACKEND || '';
+  if (filePath.startsWith('pdfs/')) return `${base}/${filePath}`;
+  return `${base}/pdfs/${filePath}`;
+}
 
 export const literatureApi = {
   getAll: () => api.get<Literature[]>('/literature'),
