@@ -52,9 +52,9 @@ No test, lint, or formatter scripts configured.
 Each route file exports a default `Router`. Transactions use `db.transaction(() => { ... })()`.
 
 ### AI Writer (`backend/src/services/ai-writer.ts`)
-- Calls DeepSeek or Qwen API via `fetch()` (OpenAI-compatible endpoint).
-- Falls back: `DEEPSEEK_API_KEY` → `QWEN_API_KEY`, similarly for base URL and model.
-- `.env` keys: `DEEPSEEK_API_KEY`, `DEEPSEEK_BASE_URL`, `DEEPSEEK_MODEL` / `QWEN_API_KEY`, `QWEN_BASE_URL`, `QWEN_MODEL`.
+- Calls DeepSeek / Qwen / Minimax API via `fetch()` (OpenAI-compatible endpoint).
+- Falls back: `DEEPSEEK_API_KEY` → `QWEN_API_KEY` → `MINIMAX_API_KEY`, similarly for base URL and model.
+- `.env` keys: `DEEPSEEK_API_KEY`, `DEEPSEEK_BASE_URL`, `DEEPSEEK_MODEL` / `QWEN_API_KEY`, `QWEN_BASE_URL`, `QWEN_MODEL` / `MINIMAX_API_KEY`, `MINIMAX_BASE_URL`, `MINIMAX_MODEL`.
 - Server port: `PORT` (default `3001`). Data dir: `DATA_DIR` (default `./data`). Max upload: `MAX_FILE_SIZE` (default `50000000`).
 
 ### PDF Parsing (`backend/src/services/pdf-parser.ts`)
@@ -114,3 +114,48 @@ const { action1, action2 } = useAppStore();
 - `.env` is gitignored — always provide `.env.example` when adding new env vars.
 - `dist/` is gitignored but tracked files exist in remote — need `git rm -r --cached dist/` if cleaning.
 - The `litwrite/` directory at root is a stale copy of the working tree — actual tracked paths are `backend/` and `frontend/` at root level.
+
+## Deployment (Alibaba Cloud ECS)
+
+### Overview
+- **Target**: Alibaba Cloud ECS, Alibaba Cloud Linux 3 (RHEL 9-based), PM2 + Nginx
+- **Access**: IP-only (no domain), port 80
+- **Scripts**: `deploy/deploy.sh` (first deploy), `deploy/update.sh` (subsequent updates)
+- **Nginx config**: `deploy/nginx-litwrite.conf`
+
+### Quick Deploy
+```bash
+# 1. 阿里云控制台 → 安全组 → 添加入方向规则：端口 22, 80, 443
+# 2. SSH 连接服务器
+ssh root@your-server-ip
+
+# 3. 一键部署
+curl -fsSL https://raw.githubusercontent.com/jaho24/lit-writing/main/deploy/deploy.sh | bash
+# 或手动上传脚本后执行：
+bash deploy/deploy.sh
+```
+
+### Post-Deploy Checklist
+1. 编辑 `backend/.env` 填入 AI API Key
+2. 阿里云安全组开放端口 22 (SSH), 80 (HTTP)
+3. 访问 `http://your-server-ip` 验证
+
+### Update (后续更新代码)
+```bash
+bash deploy/update.sh
+# 或手动：
+cd /var/www/litwrite && git pull origin main
+cd backend && npm install && npm run build && pm2 restart litwrite-backend
+cd frontend && npm install && npm run build && cp -r dist/* /usr/share/nginx/html/
+```
+
+### Key Paths on Server
+| Item | Path |
+|---|---|
+| App code | `/var/www/litwrite` |
+| Frontend static | `/usr/share/nginx/html` |
+| SQLite DB | `/var/www/litwrite/backend/data/litwrite.db` |
+| PDF files | `/var/www/litwrite/backend/data/pdfs/` |
+| Nginx config | `/etc/nginx/conf.d/litwrite.conf` |
+| PM2 logs | `pm2 logs litwrite-backend` |
+| Backups | `/backup/` (auto: daily 2:00 DB, 3:00 PDFs, 30-day retention) |
