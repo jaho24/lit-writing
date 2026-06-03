@@ -12,12 +12,12 @@ interface GenerateResult {
 }
 
 export async function generateWriting(options: GenerateOptions): Promise<GenerateResult> {
-  const apiKey = process.env.DEEPSEEK_API_KEY || process.env.QWEN_API_KEY;
-  const baseUrl = process.env.DEEPSEEK_BASE_URL || process.env.QWEN_BASE_URL || 'https://api.deepseek.com/v1';
-  const model = process.env.DEEPSEEK_MODEL || process.env.QWEN_MODEL || 'deepseek-chat';
+  const apiKey = process.env.DEEPSEEK_API_KEY || process.env.QWEN_API_KEY || process.env.MINIMAX_API_KEY;
+  const baseUrl = process.env.DEEPSEEK_BASE_URL || process.env.QWEN_BASE_URL || process.env.MINIMAX_BASE_URL || 'https://api.deepseek.com/v1';
+  const model = process.env.DEEPSEEK_MODEL || process.env.QWEN_MODEL || process.env.MINIMAX_MODEL || 'deepseek-chat';
 
   if (!apiKey) {
-    throw new Error('AI API key not configured. Set DEEPSEEK_API_KEY or QWEN_API_KEY in .env');
+    throw new Error('AI API key not configured. Set DEEPSEEK_API_KEY, QWEN_API_KEY, or MINIMAX_API_KEY in .env');
   }
 
   const systemPrompt = `你是一位学术写作助手。根据用户提供的标注素材和写作风格要求，生成一段学术论述段落。
