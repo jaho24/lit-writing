@@ -11,7 +11,7 @@ interface Annotation {
   width: number | null;
   height: number | null;
   color: string;
-  type: 'highlight' | 'note';
+  type: 'highlight' | 'note' | 'underline';
   text: string | null;
   note: string | null;
   tags?: { id: number; name: string; color: string }[];
@@ -130,10 +130,10 @@ export function AnnotationList() {
                       onClick={() => handleAnnotationClick(annotation)}
                     >
                       <div className="flex items-start space-x-3">
-                        <div
-                          className="w-2 h-2 rounded-full mt-2"
-                          style={{ backgroundColor: annotation.color }}
-                        />
+<div
+                           className="w-2 h-2 rounded-full mt-2"
+                           style={{ backgroundColor: annotation.tags?.[0]?.color || annotation.color }}
+                         />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm text-gray-900 truncate">
                             {annotation.text || '无文本'}

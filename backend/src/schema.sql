@@ -18,6 +18,8 @@ CREATE TABLE IF NOT EXISTS literature (
   file_name     TEXT NOT NULL,
   library_id    INTEGER REFERENCES libraries(id) ON DELETE SET NULL,
   metadata_confidence TEXT,
+  is_starred    INTEGER DEFAULT 0,
+  priority      INTEGER DEFAULT 0 CHECK(priority IN (0, 1, 2)),
   added_at      TEXT DEFAULT (datetime('now')),
   updated_at    TEXT DEFAULT (datetime('now'))
 );
@@ -37,7 +39,7 @@ CREATE TABLE IF NOT EXISTS annotations (
   width         REAL,
   height        REAL,
   color         TEXT DEFAULT '#9E9E9E',
-  type          TEXT DEFAULT 'highlight' CHECK(type IN ('highlight','note')),
+  type          TEXT DEFAULT 'highlight' CHECK(type IN ('highlight','note','underline')),
   text          TEXT,
   note          TEXT,
   created_at    TEXT DEFAULT (datetime('now')),
@@ -83,6 +85,17 @@ CREATE TABLE IF NOT EXISTS generation_records (
   language      TEXT DEFAULT 'zh',
   citation_format TEXT DEFAULT 'GB/T 7714',
   generated_at  TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS ai_config (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  provider      TEXT NOT NULL DEFAULT 'deepseek' CHECK(provider IN ('deepseek', 'qwen', 'minimax')),
+  api_key       TEXT NOT NULL,
+  base_url      TEXT NOT NULL,
+  model         TEXT NOT NULL,
+  is_active     INTEGER DEFAULT 1,
+  created_at    TEXT DEFAULT (datetime('now')),
+  updated_at    TEXT DEFAULT (datetime('now'))
 );
 
 -- Seed built-in writing styles

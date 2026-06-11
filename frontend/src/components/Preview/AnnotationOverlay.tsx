@@ -11,7 +11,7 @@ interface Annotation {
   width: number | null;
   height: number | null;
   color: string;
-  type: 'highlight' | 'note';
+  type: 'highlight' | 'note' | 'underline';
   text: string | null;
   note: string | null;
   tags?: { id: number; name: string; color: string }[];
@@ -61,7 +61,7 @@ export function AnnotationOverlay() {
             top: annotation.position_y ? `${annotation.position_y}px` : '0',
             width: annotation.width ? `${annotation.width}px` : '100px',
             height: annotation.height ? `${annotation.height}px` : '20px',
-            backgroundColor: annotation.color,
+            backgroundColor: annotation.tags?.[0]?.color || annotation.color,
             opacity: hoveredAnnotation === annotation.id ? 0.5 : 0.3,
           }}
           onMouseEnter={() => setHoveredAnnotation(annotation.id)}

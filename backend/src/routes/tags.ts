@@ -14,10 +14,14 @@ router.get('/', (_req, res) => {
 });
 
 router.post('/', (req, res) => {
-  const { name, color, description } = req.body;
+  const { name, color, description, parent_id } = req.body;
   try {
     const result = statements.createTag.run(name, color || '#4CAF50', description || null);
-    res.json({ id: result.lastInsertRowid, name, color: color || '#4CAF50', description });
+    if (parent_id) {
+      db.prepare('UPDATE tags SET parent_id = ? WHERE id = ?').run(parent_id, Number(result.lastInsertRowid));
+    }
+    const tag = statements.getTagById.get(Number(result.lastInsertRowid));
+    res.json(tag);
   } catch (err: any) {
     if (err.message?.includes('UNIQUE')) {
       return res.status(409).json({ error: 'Tag name already exists' });
@@ -31,11 +35,7 @@ router.put('/:id', (req, res) => {
   const result = statements.updateTag.run(name, color, description || null, Number(req.params.id));
   if (result.changes === 0) return res.status(404).json({ error: 'Tag not found' });
 
-  db.prepare(`
-    UPDATE annotations SET color = ? WHERE id IN (
-      SELECT annotation_id FROM annotation_tags WHERE tag_id = ?
-    )
-  `).run(color, Number(req.params.id));
+  statements.propagateTagColor.run(color, Number(req.params.id));
 
   res.json(statements.getTagById.get(Number(req.params.id)));
 });
@@ -48,14 +48,7 @@ router.delete('/:id', (req, res) => {
 
 router.get('/:id/annotations', (req, res) => {
   const tagId = Number(req.params.id);
-  const annotations = db.prepare(`
-    SELECT a.*, l.title as literature_title, l.authors as literature_authors, l.year as literature_year, l.journal as literature_journal
-    FROM annotations a
-    JOIN annotation_tags at ON a.id = at.annotation_id
-    JOIN literature l ON a.literature_id = l.id
-    WHERE at.tag_id = ?
-    ORDER BY a.created_at DESC
-  `).all(tagId) as Annotation[];
+  const annotations = statements.getTagAnnotationsWithLiterature.all(tagId) as Annotation[];
   res.json(annotations);
 });
 

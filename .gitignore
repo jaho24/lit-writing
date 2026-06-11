@@ -9,3 +9,6 @@ Thumbs.db
 *.log
 backend/data/
 .sisyphus/
+.workbuddy/
+litwrite/
+*.tsbuildinfo

@@ -11,7 +11,7 @@ interface Annotation {
   width: number | null;
   height: number | null;
   color: string;
-  type: 'highlight' | 'note';
+  type: 'highlight' | 'note' | 'underline';
   text: string | null;
   note: string | null;
   tags?: { id: number; name: string; color: string }[];

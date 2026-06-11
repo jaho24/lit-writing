@@ -1,15 +1,8 @@
 import { Router } from 'express';
 import db, { statements } from '../database';
 import { generateWriting } from '../services/ai-writer';
-import type { Annotation, Tag, WritingStyle, GenerationRecord, GenerateRequest, CitationItem } from '../types';
-
-interface AnnotationWithLiterature extends Annotation {
-  literature_title: string;
-  literature_authors: string;
-  literature_year: number | null;
-  literature_journal: string | null;
-  literature_doi: string | null;
-}
+import { fetchAnnotationsWithLiterature, buildLiteratureMap, buildCitationsFromLiteratureMap, parseJSONField } from '../services/writing-utils';
+import type { Annotation, Tag, WritingStyle, GenerationRecord, GenerateRequest } from '../types';
 
 const router = Router();
 
@@ -33,7 +26,7 @@ router.post('/', async (req, res) => {
     WHERE at.tag_id IN (${placeholders})
     GROUP BY a.id
     ORDER BY a.created_at DESC
-  `).all(...body.tag_ids) as AnnotationWithLiterature[];
+  `).all(...body.tag_ids) as Annotation[];
 
   const tagDetails = body.tag_ids.map(id => statements.getTagById.get(id) as Tag | undefined);
   const annotationTags = body.tag_ids.map(id => ({ id, name: (tagDetails.find(t => t?.id === id))?.name || '' }));
@@ -62,34 +55,17 @@ router.post('/', async (req, res) => {
     stylePrompt = body.custom_prompt;
   }
 
-  const literatureMap = new Map<number, { id: number; title: string; authors: string; year: number | null; journal: string | null; doi: string | null }>();
-  for (const a of annotations) {
-    if (!literatureMap.has(a.literature_id)) {
-      literatureMap.set(a.literature_id, {
-        id: a.literature_id,
-        title: a.literature_title || 'Unknown',
-        authors: a.literature_authors || 'Unknown',
-        year: a.literature_year,
-        journal: a.literature_journal,
-        doi: a.literature_doi,
-      });
-    }
-  }
-
-  const annotationMaterial = annotations.map(a => {
-    const tagNames = annotationTags.map(t => t.name).filter(Boolean);
-    return `- 来源：${a.literature_title || 'Unknown'} (${a.literature_authors || 'Unknown'}, ${a.literature_year || 'N/A'})，DOI: ${a.literature_doi || 'N/A'}，第${a.page}页\n  原文："${a.text || ''}"\n  批注："${a.note || ''}"`;
-  }).join('\n\n');
+  const literatureMap = buildLiteratureMap(annotations as any);
 
   const tagSections = body.tag_ids.map(id => {
     const tagName = (tagDetails.find(t => t?.id === id))?.name || '';
     const tagAnnotations = annotations.filter(a => {
-      const aTags = db.prepare('SELECT tag_id FROM annotation_tags WHERE annotation_id = ?').all(a.id) as { tag_id: number }[];
+      const aTags = statements.getAnnotationTags.all(a.id) as { tag_id: number }[];
       return aTags.some(at => at.tag_id === id);
     });
     if (tagAnnotations.length === 0) return '';
     return `标签 "${tagName}" 下的标注：\n${tagAnnotations.map(a =>
-      `- 来源：${a.literature_title || 'Unknown'} (${a.literature_authors || 'Unknown'}, ${a.literature_year || 'N/A'})\n  原文："${a.text || ''}"\n  批注："${a.note || ''}"`
+      `- 来源：${(a as any).literature_title || 'Unknown'} (${(a as any).literature_authors || 'Unknown'}, ${(a as any).literature_year || 'N/A'})\n  原文："${a.text || ''}"\n  批注："${a.note || ''}"`
     ).join('\n')}`;
   }).filter(Boolean).join('\n\n');
 
@@ -103,20 +79,7 @@ router.post('/', async (req, res) => {
       annotation_material: tagSections,
     });
 
-    const citations: CitationItem[] = [];
-    let markerIndex = 1;
-    for (const [litId, lit] of literatureMap) {
-      citations.push({
-        marker: `[${markerIndex}]`,
-        literature_id: litId,
-        title: lit.title,
-        authors: lit.authors,
-        year: lit.year,
-        journal: lit.journal,
-        doi: lit.doi,
-      });
-      markerIndex++;
-    }
+    const citations = buildCitationsFromLiteratureMap(literatureMap);
 
     const recordResult = statements.createGenerationRecord.run(
       result.content,
@@ -150,9 +113,9 @@ router.get('/records', (_req, res) => {
   const records = statements.getAllGenerationRecords.all() as GenerationRecord[];
   res.json(records.map(r => ({
     ...r,
-    citations: JSON.parse(r.citations as unknown as string),
-    tags_used: JSON.parse(r.tags_used as unknown as string),
-    annotation_ids: JSON.parse(r.annotation_ids as unknown as string || '[]'),
+    citations: parseJSONField(r.citations as unknown as string, []),
+    tags_used: parseJSONField(r.tags_used as unknown as string, []),
+    annotation_ids: parseJSONField(r.annotation_ids as unknown as string, []),
   })));
 });
 
@@ -161,9 +124,9 @@ router.get('/records/:id', (req, res) => {
   if (!record) return res.status(404).json({ error: 'Record not found' });
   res.json({
     ...record,
-    citations: JSON.parse(record.citations as unknown as string),
-    tags_used: JSON.parse(record.tags_used as unknown as string),
-    annotation_ids: JSON.parse(record.annotation_ids as unknown as string || '[]'),
+    citations: parseJSONField(record.citations as unknown as string, []),
+    tags_used: parseJSONField(record.tags_used as unknown as string, []),
+    annotation_ids: parseJSONField(record.annotation_ids as unknown as string, []),
   });
 });
 

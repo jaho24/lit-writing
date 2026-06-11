@@ -54,7 +54,12 @@ router.get('/', (req, res) => {
 router.post('/', (req, res) => {
   const { literature_id, page, position_x, position_y, width, height, type, text, note, tag_ids } = req.body;
 
-  const color = '#9E9E9E';
+  let color = '#9E9E9E';
+  if (tag_ids && Array.isArray(tag_ids) && tag_ids.length > 0) {
+    const firstTag = statements.getTagById.get(tag_ids[0]) as Tag | undefined;
+    if (firstTag) color = firstTag.color;
+  }
+
   const result = statements.createAnnotation.run(
     literature_id, page, position_x || null, position_y || null,
     width || null, height || null, color, type || 'highlight',
@@ -96,10 +101,20 @@ router.put('/:id/tags', (req, res) => {
     for (const tagId of tag_ids) {
       statements.addAnnotationTag.run(annotationId, tagId);
     }
+
+    if (tag_ids.length > 0) {
+      const firstTag = statements.getTagById.get(tag_ids[0]) as Tag | undefined;
+      if (firstTag) {
+        db.prepare('UPDATE annotations SET color = ? WHERE id = ?').run(firstTag.color, annotationId);
+      }
+    } else {
+      db.prepare('UPDATE annotations SET color = ? WHERE id = ?').run('#9E9E9E', annotationId);
+    }
   });
   transaction();
 
-  res.json({ tags: statements.getAnnotationTags.all(annotationId) });
+  const annotation = statements.getAnnotationById.get(annotationId) as Annotation | undefined;
+  res.json({ ...annotation, tags: statements.getAnnotationTags.all(annotationId) as Tag[] });
 });
 
 router.delete('/:id', (req, res) => {

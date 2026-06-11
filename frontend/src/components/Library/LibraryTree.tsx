@@ -83,10 +83,15 @@ export function LibraryTree() {
     return (
       <div>
         <div
-          className={`flex items-center px-2 py-1 hover:bg-gray-100 cursor-pointer rounded-md mx-1 ${
-            isSelected ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+          className={`flex items-center px-2 py-1 cursor-pointer rounded-md mx-1 transition-colors ${
+            isSelected ? '' : ''
           }`}
-          style={{ paddingLeft: `${level * 16 + 8}px` }}
+          style={{
+            paddingLeft: `${level * 16 + 8}px`,
+            background: isSelected ? '#e8f0fe' : 'transparent',
+            color: isSelected ? '#2D6DA4' : '#1a1a1a',
+            fontSize: '13px',
+          }}
           onClick={() => onSelect(library.id)}
           onContextMenu={(e) => handleContextMenu(e, library)}
         >
@@ -97,12 +102,13 @@ export function LibraryTree() {
                   e.stopPropagation();
                   toggleExpand(library.id);
                 }}
-                className="mr-1 p-1 hover:bg-gray-200 rounded"
+                className="mr-1 p-1 rounded"
+                style={{ color: '#666' }}
               >
                 {isExpanded ? (
-                  <ChevronRight className="w-4 h-4" />
+                  <ChevronRight className="w-4 h-4 rotate-90" style={{ color: '#666' }} />
                 ) : (
-                  <ChevronRight className="w-4 h-4 rotate-90" />
+                  <ChevronRight className="w-4 h-4" style={{ color: '#666' }} />
                 )}
               </button>
             )}
@@ -110,12 +116,12 @@ export function LibraryTree() {
             
             {hasChildren ? (
               isExpanded ? (
-                <FolderOpen className="w-4 h-4 mr-2 text-blue-600" />
+                <FolderOpen className="w-4 h-4 mr-2" style={{ color: '#2D6DA4' }} />
               ) : (
-                <Folder className="w-4 h-4 mr-2 text-blue-600" />
+                <Folder className="w-4 h-4 mr-2" style={{ color: '#2D6DA4' }} />
               )
             ) : (
-              <Folder className="w-4 h-4 mr-2 text-gray-400" />
+              <Folder className="w-4 h-4 mr-2" style={{ color: '#999' }} />
             )}
             
             <span className="text-sm truncate">{library.name}</span>

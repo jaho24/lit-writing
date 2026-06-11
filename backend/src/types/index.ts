@@ -20,6 +20,8 @@ export interface Literature {
   file_name: string;
   library_id: number | null;
   metadata_confidence: Record<string, 'high' | 'medium' | 'low'> | null;
+  is_starred: number;
+  priority: number;
   added_at: string;
   updated_at: string;
 }
@@ -33,7 +35,7 @@ export interface Annotation {
   width: number | null;
   height: number | null;
   color: string; // derived from tag color, default '#9E9E9E'
-  type: 'highlight' | 'note';
+  type: 'highlight' | 'note' | 'underline';
   text: string | null;
   note: string | null;
   created_at: string;
@@ -134,4 +136,90 @@ export interface FolderScanResult {
     literature_id?: number;
     error?: string;
   }[];
+}
+
+export interface AIConfig {
+  id: number;
+  provider: 'deepseek' | 'qwen' | 'minimax';
+  api_key: string;
+  base_url: string;
+  model: string;
+  is_active: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SearchResultItem {
+  id: number;
+  type: 'literature' | 'annotation';
+  title: string;
+  excerpt: string;
+  highlightRanges: [number, number][];
+  authors?: string;
+  year?: number;
+  journal?: string;
+  tags: { id: number; name: string; color: string }[];
+  literatureId: number;
+}
+
+export interface AdvancedSearchRequest {
+  library_id?: number;
+  type_filter: string;
+  tag_ids: number[];
+  tag_logic: 'AND' | 'OR';
+}
+
+export interface AdvancedSearchResponse {
+  results: SearchResultItem[];
+  total_count: number;
+  active_conditions: { label: string; value: string }[];
+}
+
+export interface PromptTemplate {
+  id: number;
+  name: string;
+  description: string | null;
+  prompt_text: string;
+  category: string;
+  is_builtin: number;
+  created_at: string;
+}
+
+export interface ChatThread {
+  id: number;
+  title: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ChatMessage {
+  id: number;
+  thread_id: number;
+  role: 'user' | 'assistant';
+  content: string;
+  citations: string;
+  annotation_ids: string;
+  prompt_used: string | null;
+  prompt_type: 'style' | 'template' | null;
+  created_at: string;
+}
+
+export interface ChatGenerateRequest {
+  thread_id?: number;
+  messages: Array<{ role: string; content: string }>;
+  instruction: string;
+  annotation_ids: number[];
+  literature_ids?: number[];
+  prompt_template?: string;
+  prompt_type?: 'style' | 'template';
+  style_mode?: string;
+  language?: string;
+  citation_format?: string;
+}
+
+export interface ChatGenerateResponse {
+  thread_id: number;
+  message_id: number;
+  content: string;
+  citations: CitationItem[];
 }

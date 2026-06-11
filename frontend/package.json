@@ -9,11 +9,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tiptap/markdown": "^3.26.0",
+    "@tiptap/pm": "^3.26.0",
+    "@tiptap/react": "^3.26.0",
+    "@tiptap/starter-kit": "^3.26.0",
     "axios": "^1.7.9",
     "lucide-react": "^0.469.0",
     "pdfjs-dist": "^4.9.155",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-resizable-panels": "^4.11.2",
     "zustand": "^5.0.3"
   },
   "devDependencies": {
@@ -21,6 +26,7 @@
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
+    "esbuild": "^0.25.0",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.7.3",

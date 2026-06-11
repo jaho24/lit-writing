@@ -10,6 +10,9 @@ router.get('/', (_req, res) => {
 
 router.post('/', (req, res) => {
   const { name, description, style_prompt, citation_format, language } = req.body;
+  if (!name || !style_prompt || !citation_format) {
+    return res.status(400).json({ error: 'name, style_prompt, and citation_format are required' });
+  }
   const result = statements.createWritingStyle.run(
     name, description || null, style_prompt, citation_format, language || 'zh'
   );

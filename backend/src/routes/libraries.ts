@@ -10,8 +10,11 @@ router.get('/', (_req, res) => {
 
 router.post('/', (req, res) => {
   const { name, parent_id } = req.body;
-  const result = statements.createLibrary.run(name, parent_id || null);
-  res.json({ id: result.lastInsertRowid, name, parent_id });
+  if (!name || typeof name !== 'string' || name.trim().length === 0) {
+    return res.status(400).json({ error: 'name is required' });
+  }
+  const result = statements.createLibrary.run(name.trim(), parent_id || null);
+  res.json({ id: result.lastInsertRowid, name: name.trim(), parent_id });
 });
 
 router.put('/:id', (req, res) => {

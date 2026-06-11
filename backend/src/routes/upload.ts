@@ -77,10 +77,13 @@ router.post('/folder', async (req, res) => {
     return res.status(400).json({ error: 'Invalid folder path' });
   }
 
-  const { scanAndImport } = await import('../services/file-scanner');
-  const result = await scanAndImport(folder_path, library_id ? Number(library_id) : null);
-
-  res.json(result);
+  try {
+    const { scanAndImport } = await import('../services/file-scanner');
+    const result = await scanAndImport(folder_path, library_id ? Number(library_id) : null);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to scan folder', detail: String(err) });
+  }
 });
 
 export default router;

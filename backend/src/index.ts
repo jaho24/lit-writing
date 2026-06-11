@@ -11,6 +11,9 @@ import annotationRoutes from './routes/annotations';
 import tagRoutes from './routes/tags';
 import writingStyleRoutes from './routes/writingStyles';
 import generateRoutes from './routes/generate';
+import configRoutes from './routes/config';
+import chatRoutes from './routes/chat';
+import promptTemplateRoutes from './routes/promptTemplates';
 
 dotenv.config();
 
@@ -27,11 +30,19 @@ app.use('/api/annotations', annotationRoutes);
 app.use('/api/tags', tagRoutes);
 app.use('/api/writing-styles', writingStyleRoutes);
 app.use('/api/generate', generateRoutes);
+app.use('/api/config', configRoutes);
+app.use('/api/chat', chatRoutes);
+app.use('/api/prompt-templates', promptTemplateRoutes);
 
 app.use('/pdfs', express.static(path.join(process.env.DATA_DIR || './data', 'pdfs')));
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ error: 'Internal server error', detail: err.message });
 });
 
 app.listen(PORT, () => {
