@@ -12,3 +12,17 @@ backend/data/
 .workbuddy/
 litwrite/
 *.tsbuildinfo
+
+# Agent internal docs — not part of the project
+docs/superpowers/
+
+# Internal strategy docs — not for public repo
+deliverables/
+
+# WSL path ghost directory
+D:/
+
+# Chinese/emoji product docs — not suitable for public repo
+*产品需求规格文档*
+*竞品分析报告*
+*高级检索*
