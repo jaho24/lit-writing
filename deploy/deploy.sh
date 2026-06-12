@@ -182,6 +182,8 @@ server {
     listen 80 default_server;
     server_name _;
 
+    client_max_body_size 50m;
+
     # 前端静态文件
     root /usr/share/nginx/html;
     index index.html;
@@ -211,8 +213,12 @@ server {
         proxy_read_timeout 120s;
     }
 
+    types {
+        application/javascript mjs;
+    }
+
     # 静态资源缓存
-    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+    location ~* \.(js|mjs|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
         expires 30d;
         add_header Cache-Control "public, no-transform";
     }
