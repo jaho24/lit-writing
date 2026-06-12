@@ -4,7 +4,9 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { Highlighter, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, FileText, X, Plus, Underline, Square } from 'lucide-react';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.mjs', import.meta.url).toString();
+// dpr: inline mode — no external worker file, runs in main thread
+// eliminates .mjs MIME type issues on server deployment
+pdfjsLib.GlobalWorkerOptions.workerSrc = '';
 
 interface PDFPreviewProps {
   literatureId: number;
