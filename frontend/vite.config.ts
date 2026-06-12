@@ -1,6 +1,10 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   plugins: [
@@ -8,7 +12,6 @@ export default defineConfig({
     {
       name: 'rename-mjs-to-js',
       closeBundle() {
-        const fs = require('fs');
         const distDir = path.resolve(__dirname, 'dist/assets');
         if (!fs.existsSync(distDir)) return;
         const files = fs.readdirSync(distDir);
