@@ -39,6 +39,8 @@ export function PDFPreview({ literatureId, initialPage = 1, initialScale = 1.2 }
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [dragRect, setDragRect] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  const [pageCSSWidth, setPageCSSWidth] = useState(0);
+  const [pageCSSHeight, setPageCSSHeight] = useState(0);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const textLayerRef = useRef<HTMLDivElement>(null);
@@ -97,6 +99,8 @@ export function PDFPreview({ literatureId, initialPage = 1, initialScale = 1.2 }
       canvas.height = renderViewport.height;
       canvas.style.width = `${cssViewport.width}px`;
       canvas.style.height = `${cssViewport.height}px`;
+      setPageCSSWidth(cssViewport.width);
+      setPageCSSHeight(cssViewport.height);
 
       await page.render({ canvasContext: ctx, viewport: renderViewport }).promise;
 
@@ -371,13 +375,17 @@ export function PDFPreview({ literatureId, initialPage = 1, initialScale = 1.2 }
         <div className="flex justify-center">
           <div
             ref={pageWrapperRef}
-            className="relative inline-block"
-            style={{ cursor: areaHighlightMode ? 'crosshair' : 'default' }}
+            className="relative"
+            style={{
+              width: pageCSSWidth ? `${pageCSSWidth}px` : undefined,
+              height: pageCSSHeight ? `${pageCSSHeight}px` : undefined,
+              cursor: areaHighlightMode ? 'crosshair' : 'default',
+            }}
             onMouseDown={areaHighlightMode ? handleAreaMouseDown : undefined}
             onMouseMove={areaHighlightMode ? handleAreaMouseMove : undefined}
             onMouseUp={areaHighlightMode ? handleAreaMouseUp : undefined}
           >
-            <canvas ref={canvasRef} className="block border border-gray-200" />
+            <canvas ref={canvasRef} className="block" />
 
             <div
               ref={annotationLayerRef}
