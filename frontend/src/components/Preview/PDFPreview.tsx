@@ -83,17 +83,24 @@ export function PDFPreview({ literatureId, initialPage = 1, initialScale = 1.2 }
 
     try {
       const page = await pdfDocument.getPage(pageNum);
-      const viewport = page.getViewport({ scale });
+      const dpr = window.devicePixelRatio || 1;
+
+      // dpr: canvas renders at scale*dpr for crisp pixels, CSS display stays at original scale
+      const renderViewport = page.getViewport({ scale: scale * dpr });
+      const cssViewport = page.getViewport({ scale });
 
       // 1) Render canvas
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
-      await page.render({ canvasContext: ctx, viewport }).promise;
+      canvas.width = renderViewport.width;
+      canvas.height = renderViewport.height;
+      canvas.style.width = `${cssViewport.width}px`;
+      canvas.style.height = `${cssViewport.height}px`;
 
-      // 2) Render text layer using PDF.js official TextLayer class
+      await page.render({ canvasContext: ctx, viewport: renderViewport }).promise;
+
+      // 2) Render text layer (cssViewport keeps selection coordinates aligned)
       const textLayerDiv = textLayerRef.current;
       if (textLayerDiv) {
         textLayerDiv.innerHTML = '';
@@ -101,7 +108,7 @@ export function PDFPreview({ literatureId, initialPage = 1, initialScale = 1.2 }
         const textLayer = new pdfjsLib.TextLayer({
           textContentSource,
           container: textLayerDiv,
-          viewport,
+          viewport: cssViewport,
         });
         await textLayer.render();
       }
