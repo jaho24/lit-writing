@@ -6,6 +6,7 @@ interface AppState {
   libraries: Library[];
   literature: Literature[];
   selectedLiteratureId: number | null;
+  selectedFolderId: number | null;
   annotations: Annotation[];
   tags: Tag[];
   selectedWritingTags: number[];
@@ -51,6 +52,7 @@ interface AppState {
   fetchLiteratureByTag: (tagId: number) => Promise<void>;
   searchLiterature: (q: string) => Promise<void>;
   selectLiterature: (id: number | null) => Promise<void>;
+  selectFolder: (id: number | null) => void;
   updateLiterature: (id: number, data: Partial<Literature>) => Promise<void>;
   toggleLiteratureStar: (id: number, isStarred: boolean) => Promise<void>;
   setLiteraturePriority: (id: number, priority: 0 | 1 | 2) => Promise<void>;
@@ -119,6 +121,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   libraries: [],
   literature: [],
   selectedLiteratureId: null,
+  selectedFolderId: null,
   annotations: [],
   tags: [],
   selectedWritingTags: [],
@@ -189,6 +192,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (id) {
       await get().fetchAnnotations(id);
     }
+  },
+  selectFolder: (id) => {
+    set({ selectedFolderId: id });
   },
   updateLiterature: async (id, data) => {
     await literatureApi.update(id, data);

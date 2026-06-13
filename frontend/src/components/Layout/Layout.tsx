@@ -1,5 +1,6 @@
 import { useAppStore } from '../../stores/appStore';
-import { LiteratureList } from '../Library/LiteratureList';
+import { FolderSidebar } from '../Library/FolderSidebar';
+import { FolderLiteratureView } from '../Library/FolderLiteratureView';
 import { PDFPreview } from '../Preview/PDFPreview';
 import { AnnotationList } from '../Annotations/AnnotationList';
 import { WritingWorkspace } from '../Writing/WritingWorkspace';
@@ -24,7 +25,6 @@ export function Layout() {
   } = useAppStore();
 
   const [showUploadDialog, setShowUploadDialog] = useState(false);
-  const [middleWidth, setMiddleWidth] = useState(280);
 
   const literatureCount = literature.length;
   const annotationCount = annotations.length;
@@ -38,50 +38,22 @@ export function Layout() {
     openTab(id, title);
   };
 
-  const renderRightPanel = () => {
-    switch (rightPanelTab) {
-      case 'preview':
-        if (activeTabId) {
-          const tab = useAppStore.getState().openTabs.find(t => t.literatureId === activeTabId);
-          return <PDFPreview literatureId={activeTabId} initialPage={tab?.page} initialScale={tab?.scale} />;
-        }
-        return (
-          <div className="flex items-center justify-center h-full" style={{ color: '#999' }}>
-            <div className="text-center">
-              <BookOpen className="w-12 h-12 mx-auto mb-2" style={{ color: '#ccc' }} />
-              <p style={{ fontSize: '13px' }}>双击文献打开PDF预览</p>
-            </div>
-          </div>
-        );
-      case 'annotations':
-        return <AnnotationList />;
-      case 'writing':
-        return <WritingWorkspace />;
-      case 'settings':
-        return <SettingsPanel />;
-      default:
-        return <PDFPreview literatureId={activeTabId || 0} />;
+  const renderMainPanel = () => {
+    if (rightPanelTab === 'writing') {
+      return <WritingWorkspace />;
     }
-  };
+    if (rightPanelTab === 'annotations') {
+      return <AnnotationList />;
+    }
+    if (rightPanelTab === 'settings') {
+      return <SettingsPanel />;
+    }
 
-  const handleMiddleSplitterMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    const startX = e.clientX;
-    const startWidth = middleWidth;
-
-    const handleMouseMove = (ev: MouseEvent) => {
-      const deltaX = ev.clientX - startX;
-      const newWidth = Math.max(200, Math.min(500, startWidth + deltaX));
-      setMiddleWidth(newWidth);
-    };
-
-    const handleMouseUp = () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
+    if (activeTabId) {
+      const tab = useAppStore.getState().openTabs.find(t => t.literatureId === activeTabId);
+      return <PDFPreview literatureId={activeTabId} initialPage={tab?.page} initialScale={tab?.scale} />;
+    }
+    return <FolderLiteratureView onDoubleClick={handleDoubleClickLiterature} />;
   };
 
   return (
@@ -132,25 +104,9 @@ export function Layout() {
 
       <div className="flex flex-1 overflow-hidden">
         {rightPanelTab === 'preview' && (
-        <div
-          className="flex flex-col border-r bg-white flex-shrink-0"
-          style={{ width: `${middleWidth}px`, borderColor: '#e0e0e0' }}
-        >
-          <div className="p-2 border-b" style={{ borderColor: '#e0e0e0' }}>
-            <span className="text-[12px] font-semibold" style={{ color: '#1a1a1a' }}>文献列表</span>
+          <div className="w-[180px] flex-shrink-0">
+            <FolderSidebar />
           </div>
-          <div className="flex-1 overflow-auto">
-            <LiteratureList onDoubleClick={handleDoubleClickLiterature} />
-          </div>
-        </div>
-        )}
-
-        {rightPanelTab === 'preview' && (
-        <div
-          className="cursor-ew-resize hover:bg-gray-200 flex-shrink-0"
-          style={{ width: '4px', background: '#e0e0e0' }}
-          onMouseDown={handleMiddleSplitterMouseDown}
-        />
         )}
 
         <div className="flex-1 flex flex-col overflow-hidden" style={{ background: '#f5f5f5' }}>
@@ -177,7 +133,7 @@ export function Layout() {
           {rightPanelTab === 'preview' && <PdfTabBar />}
 
           <div className="flex-1 overflow-hidden">
-            {renderRightPanel()}
+            {renderMainPanel()}
           </div>
         </div>
       </div>
