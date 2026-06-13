@@ -109,11 +109,14 @@ router.put('/:id/libraries', (req, res) => {
     const litId = Number(req.params.id);
     const { library_ids } = req.body as { library_ids: number[] };
 
+    const primaryLibraryId = library_ids.length > 0 ? library_ids[0] : null;
+
     const transaction = db.transaction(() => {
       statements.setLiteratureLibraries.run(litId);
       for (const libId of library_ids) {
         statements.addLiteratureLibrary.run(litId, libId);
       }
+      db.prepare('UPDATE literature SET library_id = ? WHERE id = ?').run(primaryLibraryId, litId);
     });
     transaction();
 

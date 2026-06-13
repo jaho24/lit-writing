@@ -131,9 +131,9 @@ export function Layout() {
       </div>
 
       <div className="flex flex-1 overflow-hidden">
-        {rightPanelTab !== 'writing' && (
+        {rightPanelTab === 'preview' && (
         <div
-          className="flex flex-col border-r bg-white"
+          className="flex flex-col border-r bg-white flex-shrink-0"
           style={{ width: `${middleWidth}px`, borderColor: '#e0e0e0' }}
         >
           <div className="p-2 border-b" style={{ borderColor: '#e0e0e0' }}>
@@ -145,9 +145,9 @@ export function Layout() {
         </div>
         )}
 
-        {rightPanelTab !== 'writing' && (
+        {rightPanelTab === 'preview' && (
         <div
-          className="cursor-ew-resize hover:bg-gray-200"
+          className="cursor-ew-resize hover:bg-gray-200 flex-shrink-0"
           style={{ width: '4px', background: '#e0e0e0' }}
           onMouseDown={handleMiddleSplitterMouseDown}
         />

@@ -43,6 +43,7 @@ interface AppState {
 
   fetchLibraries: () => Promise<void>;
   createLibrary: (name: string, parentId?: number) => Promise<void>;
+  renameLibrary: (id: number, name: string) => Promise<void>;
   deleteLibrary: (id: number) => Promise<void>;
   assignLiteratureToFolder: (literatureId: number, libraryId: number | null) => Promise<void>;
 
@@ -157,6 +158,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
   createLibrary: async (name, parentId) => {
     await libraryApi.create(name, parentId);
+    await get().fetchLibraries();
+  },
+  renameLibrary: async (id, name) => {
+    await libraryApi.update(id, name);
     await get().fetchLibraries();
   },
   deleteLibrary: async (id) => {

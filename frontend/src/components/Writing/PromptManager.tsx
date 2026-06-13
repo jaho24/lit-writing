@@ -26,6 +26,8 @@ export function PromptManager({ onComposePrompt }: PromptManagerProps) {
   const [wordCount, setWordCount] = useState('');
   const [language, setLanguage] = useState<'zh' | 'en' | null>(null);
 
+  const allCollapsed = styleCollapsed && templateCollapsed && wordLangCollapsed;
+
   const composeAndInsert = useCallback(() => {
     const parts: string[] = [];
     if (selectedPromptType === 'style' && selectedPromptId) {
@@ -86,6 +88,12 @@ export function PromptManager({ onComposePrompt }: PromptManagerProps) {
     setWordLangCollapsed(true);
   };
 
+  const expandAll = () => {
+    setStyleCollapsed(false);
+    setTemplateCollapsed(false);
+    setWordLangCollapsed(false);
+  };
+
   const renderCollapsibleHeader = (
     title: string,
     collapsed: boolean,
@@ -109,155 +117,168 @@ export function PromptManager({ onComposePrompt }: PromptManagerProps) {
   return (
     <div className="border-b border-gray-200">
       <div className="flex items-center justify-between px-3 py-1.5">
-        <h3 className="text-xs font-semibold text-gray-700">提示词管理</h3>
         <button
-          onClick={collapseAll}
-          className="text-gray-400 hover:text-gray-600"
-          title="全部收起"
+          onClick={allCollapsed ? expandAll : undefined}
+          className={`flex items-center space-x-1 ${allCollapsed ? 'cursor-pointer hover:bg-gray-50 rounded px-1' : ''}`}
         >
-          <Minimize2 className="w-3.5 h-3.5" />
+          {allCollapsed && <ChevronRight className="w-3.5 h-3.5 text-gray-400" />}
+          <h3 className="text-xs font-semibold text-gray-700">提示词管理</h3>
         </button>
+        {!allCollapsed && (
+          <button
+            onClick={collapseAll}
+            className="text-gray-400 hover:text-gray-600"
+            title="全部收起"
+          >
+            <Minimize2 className="w-3.5 h-3.5" />
+          </button>
+        )}
       </div>
-      {renderCollapsibleHeader('写作风格', styleCollapsed, () => setStyleCollapsed(!styleCollapsed))}
-      {!styleCollapsed && (
-        <div className="px-3 pb-2">
-          <div className="space-y-1 max-h-32 overflow-y-auto">
-            {writingStyles.map(style => (
-              <div
-                key={style.id}
-                onClick={() => handleStyleClick(style)}
-                className={`p-1.5 rounded cursor-pointer transition-colors ${
-                  selectedPromptId === style.id && selectedPromptType === 'style'
-                    ? 'bg-blue-50 border border-blue-200'
-                    : 'hover:bg-gray-50'
-                }`}
-              >
-                <div className="text-xs font-medium text-gray-900">{style.name}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
-      {renderCollapsibleHeader('模板', templateCollapsed, () => setTemplateCollapsed(!templateCollapsed))}
-      {!templateCollapsed && (
-        <div className="px-3 pb-2">
-          <div className="space-y-1 max-h-32 overflow-y-auto">
-            {promptTemplates.map(template => (
-              <div
-                key={template.id}
-                onClick={() => handleTemplateClick(template)}
-                className={`p-1.5 rounded cursor-pointer transition-colors relative ${
-                  selectedPromptId === template.id && selectedPromptType === 'template'
-                    ? 'bg-blue-50 border border-blue-200'
-                    : 'hover:bg-gray-50'
-                }`}
-              >
-                <div className="text-xs font-medium text-gray-900">{template.name}</div>
-                {template.is_builtin === 0 && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteTemplate(template.id);
-                    }}
-                    className="absolute right-1 top-1 text-red-400 hover:text-red-600"
+      {!allCollapsed && (
+        <>
+          {renderCollapsibleHeader('写作风格', styleCollapsed, () => setStyleCollapsed(!styleCollapsed))}
+          {!styleCollapsed && (
+            <div className="px-3 pb-2">
+              <div className="space-y-1 max-h-32 overflow-y-auto">
+                {writingStyles.map(style => (
+                  <div
+                    key={style.id}
+                    onClick={() => handleStyleClick(style)}
+                    className={`p-1.5 rounded cursor-pointer transition-colors ${
+                      selectedPromptId === style.id && selectedPromptType === 'style'
+                        ? 'bg-blue-50 border border-blue-200'
+                        : 'hover:bg-gray-50'
+                    }`}
                   >
-                    <Trash2 className="w-3 h-3" />
-                  </button>
-                )}
+                    <div className="text-xs font-medium text-gray-900">{style.name}</div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          {showCreateForm ? (
-            <div className="space-y-1.5 p-2 bg-gray-50 rounded border border-gray-200 mt-1">
-              <input
-                type="text"
-                placeholder="模板名称"
-                value={newName}
-                onChange={e => setNewName(e.target.value)}
-                className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
-              />
-              <textarea
-                placeholder="提示词内容"
-                value={newPromptText}
-                onChange={e => setNewPromptText(e.target.value)}
-                className="w-full px-2 py-1 text-xs border border-gray-300 rounded resize-none"
-                rows={2}
-              />
-              <div className="flex gap-1">
+            </div>
+          )}
+
+          {renderCollapsibleHeader('模板', templateCollapsed, () => setTemplateCollapsed(!templateCollapsed))}
+          {!templateCollapsed && (
+            <div className="px-3 pb-2">
+              <div className="space-y-1 max-h-32 overflow-y-auto">
+                {promptTemplates.map(template => (
+                  <div
+                    key={template.id}
+                    onClick={() => handleTemplateClick(template)}
+                    className={`p-1.5 rounded cursor-pointer transition-colors relative ${
+                      selectedPromptId === template.id && selectedPromptType === 'template'
+                        ? 'bg-blue-50 border border-blue-200'
+                        : 'hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="text-xs font-medium text-gray-900">{template.name}</div>
+                    {template.is_builtin === 0 && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteTemplate(template.id);
+                        }}
+                        className="absolute right-1 top-1 text-red-400 hover:text-red-600"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {showCreateForm ? (
+                <div className="space-y-1.5 p-2 bg-gray-50 rounded border border-gray-200 mt-1">
+                  <input
+                    type="text"
+                    placeholder="模板名称"
+                    value={newName}
+                    onChange={e => setNewName(e.target.value)}
+                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
+                  />
+                  <textarea
+                    placeholder="提示词内容"
+                    value={newPromptText}
+                    onChange={e => setNewPromptText(e.target.value)}
+                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded resize-none"
+                    rows={2}
+                  />
+                  <div className="flex gap-1">
+                    <button
+                      onClick={handleCreateTemplate}
+                      className="flex-1 px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+                    >
+                      创建
+                    </button>
+                    <button
+                      onClick={() => setShowCreateForm(false)}
+                      className="flex-1 px-2 py-1 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                    >
+                      取消
+                    </button>
+                  </div>
+                </div>
+              ) : (
                 <button
-                  onClick={handleCreateTemplate}
-                  className="flex-1 px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+                  onClick={() => setShowCreateForm(true)}
+                  className="w-full flex items-center justify-center space-x-1 p-1 text-xs text-blue-600 hover:bg-blue-50 rounded mt-1"
                 >
-                  创建
+                  <Plus className="w-3 h-3" />
+                  <span>新建模板</span>
+                </button>
+              )}
+            </div>
+          )}
+
+          {renderCollapsibleHeader('字数+语言', wordLangCollapsed, () => setWordLangCollapsed(!wordLangCollapsed))}
+          {!wordLangCollapsed && (
+            <div className="px-3 pb-2 space-y-2">
+              <div>
+                <input
+                  type="number"
+                  placeholder="字数（如 1000）"
+                  value={wordCount}
+                  onChange={e => setWordCount(e.target.value)}
+                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  min={0}
+                />
+              </div>
+              <div className="flex space-x-1">
+                <button
+                  onClick={() => setLanguage(language === 'zh' ? null : 'zh')}
+                  className={`flex-1 px-2 py-1 text-xs rounded transition-colors ${
+                    language === 'zh'
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  中文
                 </button>
                 <button
-                  onClick={() => setShowCreateForm(false)}
-                  className="flex-1 px-2 py-1 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                  onClick={() => setLanguage(language === 'en' ? null : 'en')}
+                  className={`flex-1 px-2 py-1 text-xs rounded transition-colors ${
+                    language === 'en'
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
                 >
-                  取消
+                  英文
                 </button>
               </div>
             </div>
-          ) : (
-            <button
-              onClick={() => setShowCreateForm(true)}
-              className="w-full flex items-center justify-center space-x-1 p-1 text-xs text-blue-600 hover:bg-blue-50 rounded mt-1"
-            >
-              <Plus className="w-3 h-3" />
-              <span>新建模板</span>
-            </button>
           )}
-        </div>
-      )}
 
-      {renderCollapsibleHeader('字数+语言', wordLangCollapsed, () => setWordLangCollapsed(!wordLangCollapsed))}
-      {!wordLangCollapsed && (
-        <div className="px-3 pb-2 space-y-2">
-          <div>
-            <input
-              type="number"
-              placeholder="字数（如 1000）"
-              value={wordCount}
-              onChange={e => setWordCount(e.target.value)}
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              min={0}
-            />
-          </div>
-          <div className="flex space-x-1">
-            <button
-              onClick={() => setLanguage(language === 'zh' ? null : 'zh')}
-              className={`flex-1 px-2 py-1 text-xs rounded transition-colors ${
-                language === 'zh'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              中文
-            </button>
-            <button
-              onClick={() => setLanguage(language === 'en' ? null : 'en')}
-              className={`flex-1 px-2 py-1 text-xs rounded transition-colors ${
-                language === 'en'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              英文
-            </button>
-          </div>
-        </div>
-      )}
-
-      {hasAnySelection && (
-        <div className="px-3 pb-2">
-          <button
-            onClick={handleApply}
-            className="w-full px-3 py-1.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-          >
-            应用到聊天框
-          </button>
-        </div>
+          {hasAnySelection && (
+            <div className="px-3 pb-2">
+              <button
+                onClick={handleApply}
+                className="w-full px-3 py-1.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+              >
+                应用到聊天框
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

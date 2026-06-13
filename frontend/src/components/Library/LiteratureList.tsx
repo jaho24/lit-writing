@@ -1,6 +1,6 @@
 import { useAppStore } from '../../stores/appStore';
 import { useState } from 'react';
-import { Search, Star, StarOff, Flag, Trash2, ArrowUpDown, FileText, ChevronRight, Folder, Plus, X, FolderInput } from 'lucide-react';
+import { Search, Star, StarOff, Flag, Trash2, ArrowUpDown, FileText, ChevronRight, Folder, Plus, X, FolderInput, Edit3 } from 'lucide-react';
 
 interface Literature {
   id: number;
@@ -33,6 +33,7 @@ export function LiteratureList({ onDoubleClick }: LiteratureListProps) {
     annotations,
     libraries,
     createLibrary,
+    renameLibrary,
     assignLiteratureToFolder,
   } = useAppStore();
 
@@ -46,6 +47,9 @@ export function LiteratureList({ onDoubleClick }: LiteratureListProps) {
   const [creatingFolder, setCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [movingLiteratureId, setMovingLiteratureId] = useState<number | null>(null);
+  const [renamingFolderId, setRenamingFolderId] = useState<number | null>(null);
+  const [renameInputValue, setRenameInputValue] = useState('');
+  const [draggedLiteratureId, setDraggedLiteratureId] = useState<number | null>(null);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -125,6 +129,39 @@ export function LiteratureList({ onDoubleClick }: LiteratureListProps) {
 
   const handleCancelMove = () => {
     setMovingLiteratureId(null);
+  };
+
+  const handleStartRename = (libraryId: number, currentName: string) => {
+    setRenamingFolderId(libraryId);
+    setRenameInputValue(currentName);
+  };
+
+  const handleConfirmRename = async () => {
+    if (renamingFolderId !== null && renameInputValue.trim()) {
+      await renameLibrary(renamingFolderId, renameInputValue.trim());
+      setRenamingFolderId(null);
+      setRenameInputValue('');
+    }
+  };
+
+  const handleCancelRename = () => {
+    setRenamingFolderId(null);
+    setRenameInputValue('');
+  };
+
+  const handleDragStart = (literatureId: number) => {
+    setDraggedLiteratureId(literatureId);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedLiteratureId(null);
+  };
+
+  const handleDropOnFolder = async (libraryId: number) => {
+    if (draggedLiteratureId !== null) {
+      await assignLiteratureToFolder(draggedLiteratureId, libraryId);
+      setDraggedLiteratureId(null);
+    }
   };
 
   const sortedLiterature = [...literature].sort((a, b) => {
@@ -210,9 +247,12 @@ export function LiteratureList({ onDoubleClick }: LiteratureListProps) {
     return (
       <tr
         key={item.id}
+        draggable
+        onDragStart={() => handleDragStart(item.id)}
+        onDragEnd={handleDragEnd}
         className={`cursor-pointer transition-all duration-150 py-1 px-2 text-acad ${
-          isMovingItem
-            ? 'bg-blue-50 border-l-2 border-blue-400'
+          isMovingItem || draggedLiteratureId === item.id
+            ? 'bg-blue-50 border-l-2 border-blue-400 opacity-70'
             : isSelected
               ? 'bg-zotero-selected-bg border-l-2 border-zotero-blue'
               : hoveredRow === item.id
@@ -459,22 +499,77 @@ export function LiteratureList({ onDoubleClick }: LiteratureListProps) {
               const groupRows = [];
 
               if (!isSearchMode && group.name) {
+                const isRenaming = renamingFolderId === group.libraryId;
+                const isDragOverTarget = draggedLiteratureId !== null;
                 groupRows.push(
                   <tr
                     key={`group-${groupKey}`}
-                    className="cursor-pointer select-none"
-                    onClick={() => toggleGroup(group.libraryId)}
-                    style={{ background: '#f5f5f5' }}
+                    className={`cursor-pointer select-none ${isDragOverTarget ? 'bg-blue-100' : ''}`}
+                    style={{ background: isDragOverTarget ? '#e0f0ff' : '#f5f5f5' }}
+                    onDragOver={(e) => {
+                      if (draggedLiteratureId !== null) {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'move';
+                      }
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      if (group.libraryId !== null) {
+                        handleDropOnFolder(group.libraryId);
+                      }
+                    }}
                   >
                     <td colSpan={6} className="py-1.5 px-2">
                       <div className="flex items-center space-x-1.5">
                         <ChevronRight
                           className="w-3.5 h-3.5 transition-transform"
                           style={{ color: '#666', transform: isCollapsed ? '' : 'rotate(90deg)' }}
+                          onClick={() => toggleGroup(group.libraryId)}
                         />
                         <Folder className="w-3.5 h-3.5" style={{ color: '#2D6DA4' }} />
-                        <span style={{ fontSize: '12px', fontWeight: 500, color: '#1a1a1a' }}>{group.name}</span>
+                        {isRenaming ? (
+                          <input
+                            type="text"
+                            value={renameInputValue}
+                            onChange={(e) => setRenameInputValue(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleConfirmRename();
+                              if (e.key === 'Escape') handleCancelRename();
+                            }}
+                            onBlur={handleConfirmRename}
+                            className="flex-1 px-1 py-0.5 text-xs border border-blue-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            autoFocus
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        ) : (
+                          <span
+                            style={{ fontSize: '12px', fontWeight: 500, color: '#1a1a1a' }}
+                            onDoubleClick={() => {
+                              if (group.libraryId !== null) {
+                                handleStartRename(group.libraryId, group.name);
+                              }
+                            }}
+                          >
+                            {group.name}
+                          </span>
+                        )}
                         <span style={{ fontSize: '11px', color: '#999' }}>({group.items.length})</span>
+                        {group.libraryId !== null && !isRenaming && (() => {
+                          const libId = group.libraryId!;
+                          return (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleStartRename(libId, group.name);
+                              }}
+                              className="p-0.5 text-gray-400 hover:text-gray-600 opacity-0 group-hover:opacity-100"
+                              title="重命名文件夹"
+                              style={{ opacity: 0.5 }}
+                            >
+                              <Edit3 className="w-3 h-3" />
+                            </button>
+                          );
+                        })()}
                       </div>
                     </td>
                   </tr>
