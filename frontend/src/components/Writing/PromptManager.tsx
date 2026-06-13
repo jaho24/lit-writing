@@ -1,7 +1,7 @@
 import { useAppStore } from '../../stores/appStore';
 import { useState, useCallback } from 'react';
 import { WritingStyle, PromptTemplate } from '../../types';
-import { ChevronDown, ChevronRight, Trash2, Plus } from 'lucide-react';
+import { ChevronDown, ChevronRight, Trash2, Plus, Minimize2 } from 'lucide-react';
 
 interface PromptManagerProps {
   onComposePrompt: (text: string) => void;
@@ -80,6 +80,12 @@ export function PromptManager({ onComposePrompt }: PromptManagerProps) {
     composeAndInsert();
   };
 
+  const collapseAll = () => {
+    setStyleCollapsed(true);
+    setTemplateCollapsed(true);
+    setWordLangCollapsed(true);
+  };
+
   const renderCollapsibleHeader = (
     title: string,
     collapsed: boolean,
@@ -102,6 +108,16 @@ export function PromptManager({ onComposePrompt }: PromptManagerProps) {
 
   return (
     <div className="border-b border-gray-200">
+      <div className="flex items-center justify-between px-3 py-1.5">
+        <h3 className="text-xs font-semibold text-gray-700">提示词管理</h3>
+        <button
+          onClick={collapseAll}
+          className="text-gray-400 hover:text-gray-600"
+          title="全部收起"
+        >
+          <Minimize2 className="w-3.5 h-3.5" />
+        </button>
+      </div>
       {renderCollapsibleHeader('写作风格', styleCollapsed, () => setStyleCollapsed(!styleCollapsed))}
       {!styleCollapsed && (
         <div className="px-3 pb-2">

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { uploadApi } from '../../api/client';
 import { useAppStore } from '../../stores/appStore';
 import { FileText, X, CheckCircle, AlertCircle, FolderOpen, Files } from 'lucide-react';
@@ -21,7 +21,7 @@ interface BatchProgress {
 }
 
 export function UploadDialog({ onClose }: { onClose: () => void }) {
-  const { fetchLiterature, fetchTags } = useAppStore();
+  const { fetchLiterature, fetchTags, fetchLibraries, libraries, createLibrary } = useAppStore();
   const [uploadMode, setUploadMode] = useState<UploadMode>('single');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -30,13 +30,30 @@ export function UploadDialog({ onClose }: { onClose: () => void }) {
   const [uploadResult, setUploadResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [batchProgress, setBatchProgress] = useState<BatchProgress | null>(null);
+  const [targetFolderId, setTargetFolderId] = useState<number | null>(null);
+  const [showNewFolder, setShowNewFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const multiFileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    fetchLibraries();
+  }, [fetchLibraries]);
+
+  const handleCreateFolder = async () => {
+    if (newFolderName.trim()) {
+      await createLibrary(newFolderName.trim());
+      setNewFolderName('');
+      setShowNewFolder(false);
+      await fetchLibraries();
+    }
+  };
+
   const refreshData = async () => {
     await fetchLiterature();
     await fetchTags();
+    await fetchLibraries();
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -84,7 +101,7 @@ export function UploadDialog({ onClose }: { onClose: () => void }) {
     setError(null);
 
     try {
-      const response = await uploadApi.uploadPDF(selectedFile);
+      const response = await uploadApi.uploadPDF(selectedFile, targetFolderId || undefined);
       setUploadResult(`成功导入文献：${response.data.title || response.data.file_name || '未命名'}`);
       await refreshData();
     } catch (err: any) {
@@ -115,7 +132,7 @@ export function UploadDialog({ onClose }: { onClose: () => void }) {
 
     for (const file of selectedFiles) {
       try {
-        await uploadApi.uploadPDF(file);
+        await uploadApi.uploadPDF(file, targetFolderId || undefined);
         progress.imported++;
       } catch (err: any) {
         const msg = err?.response?.data?.error || err?.message || '上传失败';
@@ -216,6 +233,57 @@ export function UploadDialog({ onClose }: { onClose: () => void }) {
                 <span>{label}</span>
               </button>
             ))}
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">导入到文件夹</label>
+            <div className="flex items-center space-x-2">
+              <select
+                value={targetFolderId ?? ''}
+                onChange={(e) => setTargetFolderId(e.target.value ? Number(e.target.value) : null)}
+                className="flex-1 px-3 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                <option value="">未归档</option>
+                {libraries.map(lib => (
+                  <option key={lib.id} value={lib.id}>{lib.name}</option>
+                ))}
+              </select>
+              {showNewFolder ? (
+                <div className="flex items-center space-x-1">
+                  <input
+                    type="text"
+                    placeholder="文件夹名"
+                    value={newFolderName}
+                    onChange={(e) => setNewFolderName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleCreateFolder();
+                      if (e.key === 'Escape') { setShowNewFolder(false); setNewFolderName(''); }
+                    }}
+                    className="px-2 py-1 border border-gray-300 rounded text-sm w-24 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    autoFocus
+                  />
+                  <button
+                    onClick={handleCreateFolder}
+                    className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+                  >
+                    创建
+                  </button>
+                  <button
+                    onClick={() => { setShowNewFolder(false); setNewFolderName(''); }}
+                    className="px-2 py-1 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                  >
+                    取消
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowNewFolder(true)}
+                  className="px-2 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded"
+                >
+                  + 新建
+                </button>
+              )}
+            </div>
           </div>
 
           {uploadMode === 'single' && (

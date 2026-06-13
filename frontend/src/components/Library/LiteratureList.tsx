@@ -172,14 +172,13 @@ export function LiteratureList({ onDoubleClick }: LiteratureListProps) {
           }
         }
 
-        libraryGroups.forEach((items, libId) => {
-          const library = libraries.find(l => l.id === libId);
+        for (const lib of libraries) {
           groups.push({
-            libraryId: libId,
-            name: library ? library.name : '未知文件夹',
-            items
+            libraryId: lib.id,
+            name: lib.name,
+            items: libraryGroups.get(lib.id) || []
           });
-        });
+        }
 
         if (unassigned.length > 0) {
           groups.push({ libraryId: null, name: '未归档', items: unassigned });
