@@ -59,9 +59,12 @@ export function buildLiteratureMap(annotations: AnnotationWithLiterature[]): Map
 }
 
 export function buildCitationsFromLiteratureMap(literatureMap: Map<number, LiteratureInfo>): CitationItem[] {
+  const seenIds = new Set<number>();
   const citations: CitationItem[] = [];
   let markerIndex = 1;
   for (const [_, lit] of literatureMap) {
+    if (seenIds.has(lit.id)) continue;
+    seenIds.add(lit.id);
     citations.push({
       marker: `[${markerIndex}]`,
       literature_id: lit.id,

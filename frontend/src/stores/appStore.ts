@@ -4,7 +4,6 @@ import { libraryApi, literatureApi, annotationApi, tagApi, writingStyleApi, conf
 
 interface AppState {
   libraries: Library[];
-  selectedLibraryId: number | null;
   literature: Literature[];
   selectedLiteratureId: number | null;
   annotations: Annotation[];
@@ -45,10 +44,9 @@ interface AppState {
   fetchLibraries: () => Promise<void>;
   createLibrary: (name: string, parentId?: number) => Promise<void>;
   deleteLibrary: (id: number) => Promise<void>;
-  selectLibrary: (id: number | null) => Promise<void>;
+  assignLiteratureToFolder: (literatureId: number, libraryId: number | null) => Promise<void>;
 
   fetchLiterature: () => Promise<void>;
-  fetchLiteratureByLibrary: (libraryId: number) => Promise<void>;
   fetchLiteratureByTag: (tagId: number) => Promise<void>;
   searchLiterature: (q: string) => Promise<void>;
   selectLiterature: (id: number | null) => Promise<void>;
@@ -118,7 +116,6 @@ interface AppState {
 
 export const useAppStore = create<AppState>((set, get) => ({
   libraries: [],
-  selectedLibraryId: null,
   literature: [],
   selectedLiteratureId: null,
   annotations: [],
@@ -165,23 +162,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   deleteLibrary: async (id) => {
     await libraryApi.delete(id);
     await get().fetchLibraries();
-    if (get().selectedLibraryId === id) set({ selectedLibraryId: null });
   },
-  selectLibrary: async (id) => {
-    set({ selectedLibraryId: id });
-    if (id) {
-      await get().fetchLiteratureByLibrary(id);
-    } else {
-      await get().fetchLiterature();
-    }
-  },
-
   fetchLiterature: async () => {
     const { data } = await literatureApi.getAll();
-    set({ literature: data });
-  },
-  fetchLiteratureByLibrary: async (libraryId) => {
-    const { data } = await literatureApi.getByLibrary(libraryId);
     set({ literature: data });
   },
   fetchLiteratureByTag: async (tagId) => {
@@ -191,6 +174,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   searchLiterature: async (q) => {
     const { data } = await literatureApi.search(q);
     set({ literature: data, searchQuery: q });
+  },
+  assignLiteratureToFolder: async (literatureId: number, libraryId: number | null) => {
+    await literatureApi.setLibraries(literatureId, libraryId ? [libraryId] : []);
+    await get().fetchLiterature();
   },
   selectLiterature: async (id) => {
     set({ selectedLiteratureId: id, rightPanelTab: 'preview' });

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useImperativeHandle } from 'react';
 import { useAppStore } from '../../stores/appStore';
 import { WritingStyle, PromptTemplate } from '../../types';
 import { Send, X, Edit3 } from 'lucide-react';
@@ -6,9 +6,10 @@ import { Send, X, Edit3 } from 'lucide-react';
 interface ChatInputBarProps {
   onSend: (instruction: string) => void;
   isGenerating: boolean;
+  promptInsertRef?: React.RefObject<((text: string) => void) | null>;
 }
 
-export function ChatInputBar({ onSend, isGenerating }: ChatInputBarProps) {
+export function ChatInputBar({ onSend, isGenerating, promptInsertRef }: ChatInputBarProps) {
   const [inputValue, setInputValue] = useState('');
   const [isEditingPrompt, setIsEditingPrompt] = useState(false);
   const [editPromptText, setEditPromptText] = useState('');
@@ -18,6 +19,15 @@ export function ChatInputBar({ onSend, isGenerating }: ChatInputBarProps) {
   const promptTemplates = useAppStore(s => s.promptTemplates);
   const writingStyles = useAppStore(s => s.writingStyles);
   const setSelectedPromptId = useAppStore(s => s.setSelectedPromptId);
+
+  const insertPromptText = (text: string) => {
+    setInputValue(prev => {
+      const separator = prev.trim() ? ' | ' : '';
+      return prev.trim() + separator + text;
+    });
+  };
+
+  useImperativeHandle(promptInsertRef, () => insertPromptText, []);
 
   const handleSend = () => {
     if (inputValue.trim()) {

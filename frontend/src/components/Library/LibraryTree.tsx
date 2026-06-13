@@ -17,7 +17,7 @@ interface Library {
 }
 
 export function LibraryTree() {
-  const { libraries, selectedLibraryId, selectLibrary, createLibrary, deleteLibrary } = useAppStore();
+  const { libraries, createLibrary, deleteLibrary } = useAppStore();
   const [expandedNodes, setExpandedNodes] = useState<Set<number>>(new Set());
   const [showContextMenu, setShowContextMenu] = useState(false);
   const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
@@ -78,7 +78,7 @@ export function LibraryTree() {
   const TreeNode: React.FC<TreeNodeProps> = ({ library, level, onSelect }) => {
     const hasChildren = childLibraries.some(child => child.parent_id === library.id);
     const isExpanded = expandedNodes.has(library.id);
-    const isSelected = selectedLibraryId === library.id;
+    const isSelected = false;
 
     return (
       <div>
@@ -176,7 +176,7 @@ export function LibraryTree() {
           key={library.id}
           library={library}
           level={0}
-          onSelect={selectLibrary}
+          onSelect={() => {}}
         />
       ))}
       

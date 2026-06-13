@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAppStore } from '../../stores/appStore';
 import { ChatMessageList } from './ChatMessageList';
 import { ChatInputBar } from './ChatInputBar';
@@ -22,6 +22,7 @@ export function AIChatDialog({ editorRef, hideHeader }: AIChatDialogProps) {
   const fetchWritingStyles = useAppStore(s => s.fetchWritingStyles);
 
   const [isThreadDropdownOpen, setIsThreadDropdownOpen] = useState(false);
+  const promptInsertRef = useRef<((text: string) => void) | null>(null);
 
   useEffect(() => {
     fetchChatThreads();
@@ -53,6 +54,12 @@ export function AIChatDialog({ editorRef, hideHeader }: AIChatDialogProps) {
     await useAppStore.getState().createChatThread('新对话');
   };
 
+  const handleComposePrompt = (text: string) => {
+    if (promptInsertRef.current) {
+      promptInsertRef.current(text);
+    }
+  };
+
   const getCurrentThreadTitle = () => {
     if (!currentChatId) return '新对话';
     const thread = chatThreads.find(t => t.id === currentChatId);
@@ -74,28 +81,27 @@ export function AIChatDialog({ editorRef, hideHeader }: AIChatDialogProps) {
                 <span>{getCurrentThreadTitle()}</span>
                 <ChevronDown className="w-4 h-4" />
               </button>
-              
               {isThreadDropdownOpen && (
-                <div className="absolute right-0 mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
-                  <div className="p-3 border-b border-gray-200">
+                <div className="absolute right-0 top-full mt-1 bg-white shadow-lg rounded border border-gray-200 z-20 min-w-[200px]">
+                  <div className="p-2">
                     <button
                       onClick={handleCreateThread}
-                      className="flex items-center space-x-2 text-sm text-blue-600 hover:text-blue-800"
+                      className="w-full flex items-center space-x-2 px-3 py-2 text-sm hover:bg-gray-100 rounded"
                     >
                       <Plus className="w-4 h-4" />
                       <span>新建对话</span>
                     </button>
                   </div>
-                  <div className="max-h-48 overflow-y-auto">
+                  <div className="border-t border-gray-200 max-h-[200px] overflow-auto">
                     {chatThreads.map(thread => (
                       <div
                         key={thread.id}
-                        className="flex items-center justify-between p-3 hover:bg-gray-50 cursor-pointer"
+                        className="flex items-center justify-between px-3 py-2 hover:bg-gray-100"
                       >
-                        <span className="text-sm">{thread.title}</span>
+                        <span className="text-sm truncate">{thread.title}</span>
                         <button
                           onClick={() => handleThreadDelete(thread.id)}
-                          className="text-red-400 hover:text-red-600"
+                          className="text-gray-400 hover:text-red-500"
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -111,7 +117,7 @@ export function AIChatDialog({ editorRef, hideHeader }: AIChatDialogProps) {
       )}
       
       <div className="flex-1 flex flex-col overflow-hidden">
-        <PromptManager isCollapsed={false} onToggleCollapse={() => {}} />
+        <PromptManager onComposePrompt={handleComposePrompt} />
         <ChatMessageList
           onInsertFull={handleInsertFull}
           onInsertSelection={handleInsertSelection}
@@ -121,6 +127,7 @@ export function AIChatDialog({ editorRef, hideHeader }: AIChatDialogProps) {
       <ChatInputBar
         onSend={handleSend}
         isGenerating={isChatGenerating}
+        promptInsertRef={promptInsertRef}
       />
     </div>
   );

@@ -1,23 +1,13 @@
 import { useAppStore } from '../../stores/appStore';
-import { LibraryTree } from '../Library/LibraryTree';
 import { LiteratureList } from '../Library/LiteratureList';
 import { PDFPreview } from '../Preview/PDFPreview';
 import { AnnotationList } from '../Annotations/AnnotationList';
 import { WritingWorkspace } from '../Writing/WritingWorkspace';
 import { UploadDialog } from '../Upload/UploadDialog';
-import { TagManager } from '../Tags/TagManager';
 import { SettingsPanel } from '../Settings/SettingsPanel';
-import { ContextMenu } from '../Common/ContextMenu';
 import { PdfTabBar } from '../Preview/PdfTabBar';
-import { useState, useEffect, useCallback } from 'react';
-import { Search, Upload, PenTool, BookOpen, ChevronLeft, ChevronRight, Star, Trash2, Edit2, Copy, Tag as TagIcon } from 'lucide-react';
-
-interface ContextMenuState {
-  x: number;
-  y: number;
-  target: 'literature' | 'tag' | null;
-  id: number | null;
-}
+import { useState, useEffect } from 'react';
+import { Search, Upload, PenTool, BookOpen } from 'lucide-react';
 
 export function Layout() {
   const {
@@ -27,25 +17,22 @@ export function Layout() {
     searchQuery,
     setSearchQuery,
     setRightPanelTab,
-    selectedLiteratureId,
-    toggleLiteratureStar,
-deleteLiterature,
-    deleteTag,
     fetchLiterature,
-    fetchLiteratureByTag,
+    fetchLibraries,
     openTab,
     activeTabId,
   } = useAppStore();
 
   const [showUploadDialog, setShowUploadDialog] = useState(false);
-  const [leftCollapsed, setLeftCollapsed] = useState(false);
-  const [leftSplitterPosition, setLeftSplitterPosition] = useState(60);
   const [middleWidth, setMiddleWidth] = useState(280);
-  const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
-  const [selectedTagId, setSelectedTagId] = useState<number | null>(null);
 
   const literatureCount = literature.length;
   const annotationCount = annotations.length;
+
+  useEffect(() => {
+    fetchLiterature();
+    fetchLibraries();
+  }, [fetchLiterature, fetchLibraries]);
 
   const handleDoubleClickLiterature = (id: number, title: string) => {
     openTab(id, title);
@@ -77,45 +64,6 @@ deleteLiterature,
     }
   };
 
-  const handleContextMenu = useCallback((e: React.MouseEvent, target: 'literature' | 'tag', id: number | null = null) => {
-    e.preventDefault();
-    setContextMenu({ x: e.clientX, y: e.clientY, target, id });
-  }, []);
-
-  const closeContextMenu = useCallback(() => {
-    setContextMenu(null);
-  }, []);
-
-  useEffect(() => {
-    if (!contextMenu) return;
-    const handler = () => setContextMenu(null);
-    document.addEventListener('click', handler);
-    return () => document.removeEventListener('click', handler);
-  }, [contextMenu]);
-
-  const handleLeftSplitterMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    const startY = e.clientY;
-    const container = (e.target as HTMLElement).parentElement;
-    if (!container) return;
-    const containerHeight = container.clientHeight;
-    const startPct = leftSplitterPosition;
-
-    const handleMouseMove = (ev: MouseEvent) => {
-      const deltaY = ev.clientY - startY;
-      const newPct = Math.max(15, Math.min(85, startPct + (deltaY / containerHeight) * 100));
-      setLeftSplitterPosition(newPct);
-    };
-
-    const handleMouseUp = () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-  };
-
   const handleMiddleSplitterMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
     const startX = e.clientX;
@@ -135,37 +83,6 @@ deleteLiterature,
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
   };
-
-  const handleTagClick = (tagId: number) => {
-    if (selectedTagId === tagId) {
-      setSelectedTagId(null);
-      fetchLiterature();
-    } else {
-      setSelectedTagId(tagId);
-      fetchLiteratureByTag(tagId);
-    }
-  };
-
-  const contextMenuItems = contextMenu?.target === 'literature' && contextMenu.id
-    ? [
-        { label: '在预览中打开', icon: <BookOpen className="w-3.5 h-3.5" />, onClick: () => {
-        const lit = literature.find(l => l.id === contextMenu.id!);
-        if (lit) openTab(contextMenu.id!, lit.title || '无标题');
-      } },
-        { label: selectedLiteratureId === contextMenu.id ? '取消收藏' : '收藏', icon: <Star className="w-3.5 h-3.5" />, onClick: () => { toggleLiteratureStar(contextMenu.id!, true); } },
-        { separator: true, label: '', onClick: () => {} },
-        { label: '复制标题', icon: <Copy className="w-3.5 h-3.5" />, onClick: () => { const lit = literature.find(l => l.id === contextMenu.id); if (lit?.title) navigator.clipboard.writeText(lit.title); } },
-        { separator: true, label: '', onClick: () => {} },
-        { label: '删除', icon: <Trash2 className="w-3.5 h-3.5" />, onClick: () => { deleteLiterature(contextMenu.id!); }, danger: true },
-      ]
-    : contextMenu?.target === 'tag' && contextMenu.id
-      ? [
-          { label: '编辑标签', icon: <Edit2 className="w-3.5 h-3.5" />, onClick: () => {} },
-          { label: '按此标签筛选', icon: <TagIcon className="w-3.5 h-3.5" />, onClick: () => { handleTagClick(contextMenu.id!); } },
-          { separator: true, label: '', onClick: () => {} },
-          { label: '删除标签', icon: <Trash2 className="w-3.5 h-3.5" />, onClick: () => { deleteTag(contextMenu.id!); }, danger: true },
-        ]
-      : [];
 
   return (
     <div className="flex flex-col h-screen" style={{ background: '#f5f5f5' }}>
@@ -214,49 +131,6 @@ deleteLiterature,
       </div>
 
       <div className="flex flex-1 overflow-hidden">
-        <div
-          className="flex flex-col border-r bg-white transition-all duration-200"
-          style={{ width: leftCollapsed ? '40px' : '220px', borderColor: '#e0e0e0' }}
-        >
-          <div className="p-2 border-b flex items-center justify-between" style={{ borderColor: '#e0e0e0' }}>
-            {!leftCollapsed && (
-              <span className="text-[12px] font-semibold" style={{ color: '#1a1a1a' }}>我的库</span>
-            )}
-            <button
-              onClick={() => setLeftCollapsed(!leftCollapsed)}
-              className="p-1 rounded hover:bg-gray-100"
-            >
-              {leftCollapsed ? (
-                <ChevronRight className="w-4 h-4" style={{ color: '#666' }} />
-              ) : (
-                <ChevronLeft className="w-4 h-4" style={{ color: '#666' }} />
-              )}
-            </button>
-          </div>
-
-          {!leftCollapsed && (
-            <div className="flex-1 flex flex-col overflow-hidden">
-              <div style={{ height: `${leftSplitterPosition}%` }} className="overflow-auto">
-                <div className="p-2">
-                  <LibraryTree />
-                </div>
-              </div>
-
-              <div
-                className="cursor-ns-resize"
-                style={{ height: '4px', background: '#e0e0e0' }}
-                onMouseDown={handleLeftSplitterMouseDown}
-              />
-
-              <div style={{ height: `${100 - leftSplitterPosition}%` }} className="overflow-auto">
-                <div className="p-2">
-                  <TagManager onTagClick={handleTagClick} selectedTagId={selectedTagId} />
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
         {rightPanelTab !== 'writing' && (
         <div
           className="flex flex-col border-r bg-white"
@@ -266,7 +140,7 @@ deleteLiterature,
             <span className="text-[12px] font-semibold" style={{ color: '#1a1a1a' }}>文献列表</span>
           </div>
           <div className="flex-1 overflow-auto">
-            <LiteratureList onContextMenu={handleContextMenu} onDoubleClick={handleDoubleClickLiterature} />
+            <LiteratureList onDoubleClick={handleDoubleClickLiterature} />
           </div>
         </div>
         )}
@@ -307,15 +181,6 @@ deleteLiterature,
           </div>
         </div>
       </div>
-
-      {contextMenu && contextMenuItems.length > 0 && (
-        <ContextMenu
-          x={contextMenu.x}
-          y={contextMenu.y}
-          items={contextMenuItems}
-          onClose={closeContextMenu}
-        />
-      )}
 
       {showUploadDialog && (
         <UploadDialog onClose={() => setShowUploadDialog(false)} />
