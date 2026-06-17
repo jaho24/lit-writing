@@ -14,6 +14,7 @@ import generateRoutes from './routes/generate';
 import configRoutes from './routes/config';
 import chatRoutes from './routes/chat';
 import promptTemplateRoutes from './routes/promptTemplates';
+import translateRoutes from './routes/translate';
 
 dotenv.config();
 
@@ -33,6 +34,7 @@ app.use('/api/generate', generateRoutes);
 app.use('/api/config', configRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/prompt-templates', promptTemplateRoutes);
+app.use('/api/translate', translateRoutes);
 
 app.use('/pdfs', express.static(path.join(process.env.DATA_DIR || './data', 'pdfs')));
 

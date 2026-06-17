@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Literature, Library, Annotation, Tag, WritingStyle, StyleMode, OutputLanguage, GenerationResult, AIConfigResponse, AIConfigPublic, SearchTypeFilter, SearchAdvancedResponse, ChatGenerateRequest, ChatGenerateResponse, ChatThread, PersistedChatMessage, PromptTemplate } from '../types';
+import type { Literature, Library, Annotation, Tag, WritingStyle, StyleMode, OutputLanguage, GenerationResult, AIConfigResponse, AIConfigPublic, SearchTypeFilter, SearchAdvancedResponse, ChatGenerateRequest, ChatGenerateResponse, ChatThread, PersistedChatMessage, PromptTemplate, TranslateRequest, TranslateResponse } from '../types';
 
 // VITE_BACKEND_URL is set in production (e.g. https://litwrite-api.onrender.com)
 // In dev it's empty → Vite proxy handles /api and /pdfs
@@ -149,4 +149,8 @@ export const promptTemplateApi = {
     api.post<PromptTemplate>('/prompt-templates', data),
   update: (id: number, data: Partial<PromptTemplate>) => api.put(`/prompt-templates/${id}`, data),
   delete: (id: number) => api.delete(`/prompt-templates/${id}`),
+};
+
+export const translateApi = {
+  translate: (data: TranslateRequest) => api.post<TranslateResponse>('/translate', data, { timeout: 30000 }),
 };

@@ -6,6 +6,7 @@
 
 - **文献管理** — 导入 PDF 文件或文件夹，自动提取元数据（标题、作者、年份），按文件夹分类收纳，支持移动文献到文件夹
 - **PDF 阅读与标注** — 内置 PDF 预览（高 DPI 适配），文本高亮标注，标注颜色自动跟随标签颜色
+- **段落翻译** — PDF 选中文本后一键翻译，AI 学术翻译引擎，浮动卡片即时展示结果
 - **标签知识组织** — 为标注分配标签，按标签聚合跨文献标注，打破论文边界组织观点
 - **高级检索** — 按标签 AND/OR 逻辑检索标注与文献，支持高亮显示匹配内容
 - **AI 对话写作** — 选择标注/文献作为参考材料，与 AI 多轮对话，一键插入编辑器
@@ -42,9 +43,10 @@ backend/                # Express 后端 (CommonJS, target ES2022)
 │   │   ├── generate.ts     # AI 写作生成
 │   │   ├── chat.ts         # AI 对话 + 线程管理
 │   │   ├── config.ts       # AI 提供商配置
+│   │   ├── translate.ts    # 文本翻译（callAIService + 学术翻译 prompt）
 │   │   └── promptTemplates.ts # 提示词模板
 │   ├── services/           # 业务服务
-│   │   ├── ai-writer.ts    # AI 调用（callAIService + generateWriting + chatGenerate）
+│   │   ├── ai-writer.ts    # AI 调用（callAIService + generateWriting + chatGenerate）—— callAIService 已导出，供翻译等通用调用
 │   │   ├── writing-utils.ts# 标注/文献材料构建、引用生成
 │   │   ├── pdf-parser.ts   # PDF 元数据提取
 │   │   └── file-scanner.ts # 文件夹扫描

@@ -43,7 +43,7 @@ function getAIConfig(): AIProviderConfig {
   return { api_key: apiKey, base_url: baseUrl, model };
 }
 
-async function callAIService(
+export async function callAIService(
   messages: Array<{ role: string; content: string }>,
   maxTokens: number = 2000,
 ): Promise<GenerateResult> {

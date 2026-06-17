@@ -201,3 +201,14 @@ export interface ChatGenerateResponse {
   content: string;
   citations: CitationItem[];
 }
+
+export interface TranslateRequest {
+  text: string;
+  target_language?: 'zh' | 'en';
+}
+
+export interface TranslateResponse {
+  translated_text: string;
+  source_language: string;
+  target_language: string;
+}

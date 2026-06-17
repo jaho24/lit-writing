@@ -1,8 +1,8 @@
 import { useAppStore } from '../../stores/appStore';
-import { getPdfUrl } from '../../api/client';
+import { getPdfUrl, translateApi } from '../../api/client';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
-import { Highlighter, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, FileText, X, Plus, Underline, Square } from 'lucide-react';
+import { Highlighter, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, FileText, X, Plus, Underline, Square, Languages, Loader2 } from 'lucide-react';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.mjs', import.meta.url).toString();
 
@@ -34,6 +34,11 @@ export function PDFPreview({ literatureId, initialPage = 1, initialScale = 1.2 }
   const [showNewTagInput, setShowNewTagInput] = useState(false);
   const [newTagName, setNewTagName] = useState('');
   const [newTagColor, setNewTagColor] = useState('#4CAF50');
+
+  const [translationText, setTranslationText] = useState('');
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [showTranslation, setShowTranslation] = useState(false);
+  const [translationPos, setTranslationPos] = useState({ x: 0, y: 0 });
 
   const [areaHighlightMode, setAreaHighlightMode] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -184,9 +189,11 @@ export function PDFPreview({ literatureId, initialPage = 1, initialScale = 1.2 }
 
   const handleMouseUp = () => {
     if (pendingAnnotationId) return;
+    if (isTranslating) return;
     const selection = window.getSelection();
     if (!selection || !selection.toString().trim()) {
       setShowHighlightMenu(false);
+      setShowTranslation(false);
       return;
     }
     const text = selection.toString().trim();
@@ -196,6 +203,7 @@ export function PDFPreview({ literatureId, initialPage = 1, initialScale = 1.2 }
     const rect = range.getBoundingClientRect();
     setHighlightMenuPos({ x: rect.left + rect.width / 2, y: rect.top });
     setShowHighlightMenu(true);
+    setShowTranslation(false);
   };
 
   const handleHighlight = async (annotationType: 'highlight' | 'underline' = 'highlight') => {
@@ -279,6 +287,29 @@ export function PDFPreview({ literatureId, initialPage = 1, initialScale = 1.2 }
   const handleZoomOut = () => setScale(prev => Math.max(prev - 0.2, 0.5));
   const handlePrevPage = () => { if (currentPage > 1) setCurrentPage(prev => prev - 1); };
   const handleNextPage = () => { if (currentPage < totalPages) setCurrentPage(prev => prev + 1); };
+
+  const handleTranslate = async () => {
+    if (!selectedText) return;
+    setShowHighlightMenu(false);
+    setIsTranslating(true);
+    setTranslationText('');
+    setShowTranslation(true);
+    setTranslationPos({ x: highlightMenuPos.x, y: highlightMenuPos.y });
+    try {
+      const res = await translateApi.translate({ text: selectedText, target_language: 'zh' });
+      setTranslationText(res.data.translated_text);
+    } catch (err) {
+      console.error('Translation failed:', err);
+      setTranslationText('翻译失败，请检查AI服务配置');
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
+  const handleCloseTranslation = () => {
+    setShowTranslation(false);
+    setTranslationText('');
+  };
 
 
   const handleAreaMouseDown = (e: React.MouseEvent) => {
@@ -439,6 +470,45 @@ export function PDFPreview({ literatureId, initialPage = 1, initialScale = 1.2 }
               <Underline className="w-4 h-4 mr-1.5" style={{ color: '#2D6DA4' }} />
               下划线
             </button>
+            <button
+              onClick={handleTranslate}
+              className="px-3 py-2 text-[12px] hover:bg-gray-100 flex items-center rounded-md transition-colors"
+              style={{ color: '#1a1a1a' }}
+            >
+              <Languages className="w-4 h-4 mr-1.5" style={{ color: '#2D6DA4' }} />
+              翻译
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showTranslation && (
+        <div
+          className="fixed bg-white border rounded-xl shadow-xl z-50 w-72"
+          style={{
+            left: Math.min(translationPos.x - 120, window.innerWidth - 300),
+            top: translationPos.y + 10,
+            borderColor: '#e0e0e0',
+          }}
+        >
+          <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100">
+            <div className="flex items-center space-x-1.5">
+              <Languages className="w-4 h-4" style={{ color: '#2D6DA4' }} />
+              <span className="text-xs font-medium text-gray-700">翻译结果</span>
+            </div>
+            <button onClick={handleCloseTranslation} className="text-gray-400 hover:text-gray-600">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="p-3">
+            {isTranslating ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#2D6DA4' }} />
+                <span className="ml-2 text-sm text-gray-500">翻译中...</span>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-800 leading-relaxed">{translationText}</p>
+            )}
           </div>
         </div>
       )}

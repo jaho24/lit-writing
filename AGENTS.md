@@ -52,6 +52,7 @@ No test, lint, or formatter scripts configured.
 | `generate.ts` | `/api/generate` | AI generation (POST) + generation records |
 | `config.ts` | `/api/config` | AI provider config CRUD (create/read/update/delete active provider) |
 | `chat.ts` | `/api/chat` | Chat generation (POST /generate), thread CRUD, prompt templates |
+| `translate.ts` | `/api/translate` | Text translation (POST /), accepts `{text, target_language}`, calls `callAIService` with academic translation prompt |
 
 Each route file exports a default `Router`. Transactions use `db.transaction(() => { ... })()`.
 
@@ -64,14 +65,14 @@ Each route file exports a default `Router`. Transactions use `db.transaction(() 
 
 ### AI Writer (`backend/src/services/ai-writer.ts`)
 - Calls DeepSeek / Qwen / Minimax API via `fetch()` (OpenAI-compatible `/chat/completions` endpoint).
-- `callAIService` — shared core that calls the OpenAI-compatible endpoint; `generateWriting` and `chatGenerate` are thin wrappers.
+- `callAIService` — shared core that calls the OpenAI-compatible endpoint; now **exported** so translate and other routes can use it directly. `generateWriting` and `chatGenerate` are thin wrappers.
 - **Two-tier config**: first checks `ai_config` table for an active provider set via `/api/config`; falls back to `.env` vars.
 - Env fallback order: `DEEPSEEK_*` → `QWEN_*` → `MINIMAX_*` (for api_key, base_url, model).
 - `.env` keys: `DEEPSEEK_API_KEY`, `DEEPSEEK_BASE_URL`, `DEEPSEEK_MODEL` / `QWEN_API_KEY`, `QWEN_BASE_URL`, `QWEN_MODEL` / `MINIMAX_API_KEY`, `MINIMAX_BASE_URL`, `MINIMAX_MODEL`.
 - Server port: `PORT` (default `3001`). Data dir: `DATA_DIR` (default `./data`). Max upload: `MAX_FILE_SIZE` (default `50000000`).
 
 ### Services (`backend/src/services/`)
-- `ai-writer.ts` — AI generation via OpenAI-compatible chat API (`callAIService` + `generateWriting` + `chatGenerate`)
+- `ai-writer.ts` — AI generation via OpenAI-compatible chat API (`callAIService` (exported) + `generateWriting` + `chatGenerate`)
 - `writing-utils.ts` — Shared writing utilities:
   - `AnnotationWithLiterature` / `LiteratureWithInfo` interfaces
   - `fetchAnnotationsWithLiterature(annotationIds)` — fetch annotations with literature metadata
