@@ -1,6 +1,7 @@
 # LitWrite
 
 从阅读、标注到写作的一站式学术写作工具。
+【做了一个面向论文初稿写作的工作台】 https://www.bilibili.com/video/BV15rJn6eEJC/?share_source=copy_web&vd_source=5a21dd6ee38103a13ed7aa3bd8926cb7
 
 ## 功能
 
